@@ -29,7 +29,6 @@ namespace WeatherApp.Controllers
         public async Task<IEnumerable<CityCondensed>> GetCities([FromQuery] string location = null)
         {
             _logger.Log(LogLevel.Warning, "Location: ", location);
-            //const string APIKey = "2RSqE3YQGDu0iQo55Kue9C1tU7AhJhMc";
             //var citySearchBuilder = new UriBuilder("http://dataservice.accuweather.com/locations/v1/cities/autocomplete");
             //var query = HttpUtility.ParseQueryString(citySearchBuilder.Query);
             //query["apikey"] = APIKey;

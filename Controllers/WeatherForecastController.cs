@@ -35,7 +35,6 @@ namespace WeatherApp.Controllers
         public async Task<IEnumerable<WeatherForecast>> GetWeatherInfo([FromQuery] string latitude = null, [FromQuery] string longitude = null, [FromQuery] string location = null)
         {
             _logger.Log(LogLevel.Warning, "Location: ", location);
-            const string APIKey = "2RSqE3YQGDu0iQo55Kue9C1tU7AhJhMc";
             const string dailyForecastURL = "http://dataservice.accuweather.com/forecasts/v1/daily/1day/";
             if (location !=  null)
             {
