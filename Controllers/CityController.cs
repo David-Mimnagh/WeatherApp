@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -17,53 +19,59 @@ namespace WeatherApp.Controllers
     [Authorize]
     public class CityController : ControllerBase
     {
-        private readonly ILogger<CityController> _logger;
-        static HttpClient client = new HttpClient();
+        readonly ILogger<CityController> _logger;
+        static HttpClient _client = new HttpClient();
+        readonly Settings _settings;
 
-        public CityController(ILogger<CityController> logger)
+        public CityController(ILogger<CityController> logger, IOptions<Settings> settings)
         {
             _logger = logger;
+            _settings = settings.Value;
         }
         [HttpGet]
         [Route("GetCities")]
         public async Task<IEnumerable<CityCondensed>> GetCities([FromQuery] string location = null)
         {
-            _logger.Log(LogLevel.Warning, "Location: ", location);
-            //var citySearchBuilder = new UriBuilder("http://dataservice.accuweather.com/locations/v1/cities/autocomplete");
-            //var query = HttpUtility.ParseQueryString(citySearchBuilder.Query);
-            //query["apikey"] = APIKey;
-            //if (location == null)
-            //{
-            //    var resp = new HttpResponseMessage(System.Net.HttpStatusCode.BadRequest)
-            //    {
-            //        Content = new StringContent("Error, No Location provided"),
-            //        ReasonPhrase = "Location must be provided"
-            //    };
-            //    throw new System.Web.Http.HttpResponseException(resp);
-            //}
-            //query["q"] = location;
-            //citySearchBuilder.Query = query.ToString();
-            //HttpResponseMessage response = await client.GetAsync(citySearchBuilder.Uri);
-            //if (!response.IsSuccessStatusCode)
-            //{
-            //    var resp = new HttpResponseMessage(response.StatusCode)
-            //    {
-            //        Content = new StringContent("Error Retrieving cities"),
-            //        ReasonPhrase = "Bad response from AcuWeather API."
-            //    };
-            //    throw new System.Web.Http.HttpResponseException(resp);
-            //}
-            //string citySearchResponse = await response.Content.ReadAsStringAsync();
-            //IEnumerable<City> cities = JsonConvert.DeserializeObject<IEnumerable<City>>(citySearchResponse);
-            //IEnumerable<CityCondensed> briefCities = cities.Select(city => new CityCondensed() { 
-            //                                                Key = city.Key, 
-            //                                                Name = $"{city.LocalizedName} - {city.Country.LocalizedName}" 
-            //                                            }).ToArray();
-            IList<CityCondensed> cityCondenseds = new List<CityCondensed>() { 
-                new CityCondensed() {Key="bob", Name="Glasgow - United Kingdom" },
-                new CityCondensed() {Key="the", Name="Glasgow - United States" },
-                new CityCondensed() {Key="builder", Name="Glasgow - United Kingdom" } };
-            return cityCondenseds;
+            _logger.Log(LogLevel.Information, "Location: ", location);
+            var citySearchBuilder = new UriBuilder(_settings.CitiesAPIUrl);
+            var query = HttpUtility.ParseQueryString(citySearchBuilder.Query);
+            query["apikey"] = _settings.APIKey;
+            if (location == null)
+            {
+                var resp = new HttpResponseMessage(System.Net.HttpStatusCode.BadRequest)
+                {
+                    Content = new StringContent("Error, No Location provided"),
+                    ReasonPhrase = "Location must be provided"
+                };
+                _logger.Log(LogLevel.Warning, "No Location found for GetCities call: ", location);
+                throw new System.Web.Http.HttpResponseException(resp);
+            }
+            query["q"] = location;
+            citySearchBuilder.Query = query.ToString();
+
+            HttpResponseMessage response = await _client.GetAsync(citySearchBuilder.Uri);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var resp = new HttpResponseMessage(response.StatusCode)
+                {
+                    Content = new StringContent("Error Retrieving cities"),
+                    ReasonPhrase = "Bad response from AcuWeather API."
+                };
+                string errorResponseContent = await response.Content.ReadAsStringAsync();
+                _logger.Log(LogLevel.Warning, "Bad response received from Acuweather: ", errorResponseContent);
+                throw new System.Web.Http.HttpResponseException(resp);
+            }
+
+            string citySearchResponse = await response.Content.ReadAsStringAsync();
+            IEnumerable<City> cities = JsonConvert.DeserializeObject<IEnumerable<City>>(citySearchResponse);
+            IEnumerable<CityCondensed> briefCities = cities.Select(city => new CityCondensed()
+            {
+                Key = city.Key,
+                Name = $"{city.LocalizedName} - {city.Country.LocalizedName}"
+            }).ToArray();
+
+            return briefCities;
             }
             
         }

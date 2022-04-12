@@ -1,11 +1,12 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using Microsoft.Azure.AppConfiguration.AspNetCore;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
+using Microsoft.Azure.Services.AppAuthentication;
+using Microsoft.Extensions.Configuration.AzureAppConfiguration;
 
 namespace WeatherApp
 {
@@ -17,10 +18,23 @@ namespace WeatherApp
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args)
-                .ConfigureWebHostDefaults(webBuilder =>
-                {
-                    webBuilder.UseStartup<Startup>();
-                });
+                Host.CreateDefaultBuilder(args)
+                    .ConfigureAppConfiguration(config =>
+                    {
+                        var settings = config.Build();
+                        var connectionString = settings.GetConnectionString("AzureAppConfigurationEndpoint");
+                        config.AddAzureAppConfiguration(options => {
+                            options.Connect(connectionString)
+                            .ConfigureKeyVault(kv =>
+                            {
+                                kv.SetCredential(new DefaultAzureCredential(true));
+                            })
+                            .Select(KeyFilter.Any, "BradyTech:WeatherApp");    
+                        });
+                    })
+                    .ConfigureWebHostDefaults(webBuilder =>
+                    {
+                        webBuilder.UseStartup<Startup>();
+                    });
     }
 }

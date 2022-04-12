@@ -1,5 +1,7 @@
-import { Component, Inject } from '@angular/core';
+import { Component, ElementRef, Inject, ViewChild } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
+import { fromEvent } from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
 
 @Component({
   selector: 'app-weather-data',
@@ -10,9 +12,20 @@ export class WeatherDataComponent {
     public citiesList: CityCondensed[];
     httpClient: HttpClient;
     baseUrl: string;
+    loading: boolean;
+    @ViewChild('test', { static: false }) locationSearchBox: ElementRef;
+    ngAfterViewInit() {
+        fromEvent(this.locationSearchBox.nativeElement, 'keyup').pipe(
+            debounceTime(2000) // 2 seconds
+        ).subscribe((ev: HTMLInputElement) => {
+            //@ts-ignore
+            this.getCities(ev.target.value)
+        });
+    }
   constructor(http: HttpClient, @Inject('BASE_URL') baseUrl: string) {
       this.httpClient = http;
       this.baseUrl = baseUrl;
+      this.loading = false;
     }
     getWeatherForecast(latitude: number = null, longitude: number = null, location: string = null) {
         if (latitude && !longitude || !latitude && longitude) {
@@ -29,8 +42,10 @@ export class WeatherDataComponent {
             queryParams = queryParams.append("location", location);
         }
 
+        this.loading = true;
         this.httpClient.get<WeatherForecast[]>(this.baseUrl + 'WeatherForecast/GetWeatherInfo', { params: queryParams }).subscribe(result => {
             this.forecasts = result;
+            this.loading = false;
         }, error => console.error(error));
     }
     getCurrentLocation() {

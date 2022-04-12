@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -24,43 +25,30 @@ namespace WeatherApp.Controllers
 
         private readonly ILogger<WeatherForecastController> _logger;
         static HttpClient client = new HttpClient();
+        readonly Settings _settings;
 
-        public WeatherForecastController(ILogger<WeatherForecastController> logger)
+        public WeatherForecastController(ILogger<WeatherForecastController> logger, IOptions<Settings> settings)
         {
             _logger = logger;
+            _settings = settings.Value;
         }
 
         [HttpGet]
         [Route("GetWeatherInfo")]
-        public async Task<IEnumerable<WeatherForecast>> GetWeatherInfo([FromQuery] string latitude = null, [FromQuery] string longitude = null, [FromQuery] string location = null)
+        public async Task<IEnumerable<WeatherForecast>> GetWeatherInfo([FromQuery] string cityKey = null)
         {
-            _logger.Log(LogLevel.Warning, "Location: ", location);
-            const string dailyForecastURL = "http://dataservice.accuweather.com/forecasts/v1/daily/1day/";
-            if (location !=  null)
-            {
-                var citySearchBuilder = new UriBuilder("http://dataservice.accuweather.com/locations/v1/cities/search");
-                var query = HttpUtility.ParseQueryString(citySearchBuilder.Query);
-                query["apikey"] = APIKey;
-                query["q"] = location;
-                citySearchBuilder.Query = query.ToString();
-                HttpResponseMessage response = await client.GetAsync(citySearchBuilder.Uri);
-                if (response.IsSuccessStatusCode)
-                {
-                    string citySearchResponse = await response.Content.ReadAsStringAsync();
-                    IList<City> cities = JsonConvert.DeserializeObject<IList<City>>(citySearchResponse);
-                    //for simplicity, just assume we meant the first - should really be finetuned with the search
-                    var dailyForecastBuilder = new UriBuilder($"{dailyForecastURL}{cities.First().Key}");
-                    query = HttpUtility.ParseQueryString(dailyForecastBuilder.Query);
-                    query["apikey"] = APIKey;
-                    dailyForecastBuilder.Query = query.ToString();
-                    response = await client.GetAsync(dailyForecastBuilder.Uri);
-                    if (response.IsSuccessStatusCode)
-                    {
-                        string oneDayForecastResponse = await response.Content.ReadAsStringAsync();
-                        Forecast oneDayForecast = JsonConvert.DeserializeObject<Forecast>(oneDayForecastResponse);
+            _logger.Log(LogLevel.Information, "Getting Weather Info for city key: ", cityKey);
 
-                    }
-                }
+            var dailyForecastBuilder = new UriBuilder($"{_settings.ForecastAPIUrl}{cityKey}");
+            var query = HttpUtility.ParseQueryString(dailyForecastBuilder.Query);
+            query["apikey"] =  _settings.APIKey;
+            dailyForecastBuilder.Query = query.ToString();
+            HttpResponseMessage response = await client.GetAsync(dailyForecastBuilder.Uri);
+            if (response.IsSuccessStatusCode)
+            {
+                string oneDayForecastResponse = await response.Content.ReadAsStringAsync();
+                Forecast oneDayForecast = JsonConvert.DeserializeObject<Forecast>(oneDayForecastResponse);
+
             }
             var rng = new Random();
             return Enumerable.Range(1, 5).Select(index => new WeatherForecast

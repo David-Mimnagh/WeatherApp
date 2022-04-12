@@ -4,17 +4,17 @@
 <form>
 
     <div class="form-group">
-        <label for="citySearchBox">City:</label>
-        <input list="id-car" class="form-control" id="locationSearchInput" placeholder="Glasgow" value="" (keyup)="getCities($event.target.value)">
-        <datalist id="id-car" class="form-control">
+        <label for="locationSearchInput">City:</label>
+        <input #test list="id-car" type="text" class="form-control-sm" style="margin: 0 20px" id="locationSearchInput" placeholder="Glasgow" value="">
+        <datalist id="id-car" class="form-control-sm">
             <option *ngFor="let city of citiesList" [value]="city.key">{{city.name}}</option>
         </datalist>
-        <button value="Use current location" (click)="getCurrentLocation()">
+        <button value="Use current location" class="btn btn-primary" style="padding: 1px 3px" (click)="getCurrentLocation()">
             Use current location
         </button>
     </div>
 </form>
-<p *ngIf="!forecasts"><em>Loading...</em></p>
+<p *ngIf="loading"><em>Loading...</em></p>
 
 <table class='table table-striped' aria-labelledby="tableLabel" *ngIf="forecasts">
   <thead>

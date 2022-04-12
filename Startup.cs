@@ -39,7 +39,11 @@ namespace WeatherApp
 
             services.AddAuthentication()
                 .AddIdentityServerJwt();
-           
+            services.AddAzureAppConfiguration();
+            services.AddOptions<Settings>().Configure<IConfiguration>((settings, configuration) =>
+            {
+                configuration.GetSection("AcuWeather").Bind(settings);
+            });
             services.AddControllersWithViews();
             services.AddRazorPages();
             // In production, the Angular files will be served from this directory
@@ -63,6 +67,7 @@ namespace WeatherApp
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
+            
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
