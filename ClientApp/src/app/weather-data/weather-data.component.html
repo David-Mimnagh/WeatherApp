@@ -1,0 +1,36 @@
+<h1 id="tableLabel">Weather forecast</h1>
+
+<p>Enter a location to find the latest weather information</p>
+<form>
+
+    <div class="form-group">
+        <label for="citySearchBox">City:</label>
+        <input list="id-car" class="form-control" id="locationSearchInput" placeholder="Glasgow" value="" (keyup)="getCities($event.target.value)">
+        <datalist id="id-car" class="form-control">
+            <option *ngFor="let city of citiesList" [value]="city.key">{{city.name}}</option>
+        </datalist>
+        <button value="Use current location" (click)="getCurrentLocation()">
+            Use current location
+        </button>
+    </div>
+</form>
+<p *ngIf="!forecasts"><em>Loading...</em></p>
+
+<table class='table table-striped' aria-labelledby="tableLabel" *ngIf="forecasts">
+  <thead>
+    <tr>
+      <th>Date</th>
+      <th>Temp. (C)</th>
+      <th>Temp. (F)</th>
+      <th>Summary</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let forecast of forecasts">
+      <td>{{ forecast.date }}</td>
+      <td>{{ forecast.temperatureC }}</td>
+      <td>{{ forecast.temperatureF }}</td>
+      <td>{{ forecast.summary }}</td>
+    </tr>
+  </tbody>
+</table>
