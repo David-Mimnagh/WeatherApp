@@ -35,13 +35,28 @@ namespace WeatherApp.Controllers
 
         [HttpGet]
         [Route("GetWeatherInfo")]
-        public async Task<IEnumerable<WeatherForecast>> GetWeatherInfo([FromQuery] string cityKey = null)
+        public async Task<IEnumerable<WeatherForecast>> GetWeatherInfo([FromQuery] string latitude = null, [FromQuery] string longitude = null, [FromQuery] string cityKey = null, [FromQuery]  bool useMetric = false)
         {
             _logger.Log(LogLevel.Information, "Getting Weather Info for city key: ", cityKey);
-
+            if ((String.IsNullOrEmpty(latitude) || String.IsNullOrEmpty(longitude)))
+            {
+                if (String.IsNullOrEmpty(cityKey)) { 
+                    var resp = new HttpResponseMessage(System.Net.HttpStatusCode.BadRequest)
+                    {
+                        Content = new StringContent("Error, No CityKey or Lat,Lon provided"),
+                        ReasonPhrase = "City Key or Lat,Lon must be provided"
+                    };
+                    _logger.Log(LogLevel.Warning, "Invalid parameters passed to GetWeatherInfo call.");
+                    throw new System.Web.Http.HttpResponseException(resp);
+                }
+            }
             var dailyForecastBuilder = new UriBuilder($"{_settings.ForecastAPIUrl}{cityKey}");
             var query = HttpUtility.ParseQueryString(dailyForecastBuilder.Query);
             query["apikey"] =  _settings.APIKey;
+            if (useMetric)
+            {
+                query["metric"] = "true";
+            }
             dailyForecastBuilder.Query = query.ToString();
             HttpResponseMessage response = await client.GetAsync(dailyForecastBuilder.Uri);
             if (response.IsSuccessStatusCode)
