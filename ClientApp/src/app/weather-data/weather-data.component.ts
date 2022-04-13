@@ -5,29 +5,52 @@ import { debounceTime } from 'rxjs/operators';
 
 @Component({
   selector: 'app-weather-data',
-  templateUrl: './weather-data.component.html'
+    templateUrl: './weather-data.component.html',
+    styleUrls: ['./weather-data.component.css']
 })
 export class WeatherDataComponent {
-    public forecasts: WeatherForecast[];
+    public forecast: WeatherForecast;
     public citiesList: CityCondensed[];
     httpClient: HttpClient;
     baseUrl: string;
     loading: boolean;
-    @ViewChild('test', { static: false }) locationSearchBox: ElementRef;
+    selectedCity: boolean;
+    useMetric: boolean;
+    @ViewChild('cityInput', { static: false }) locationSearchBox: ElementRef;
     ngAfterViewInit() {
         fromEvent(this.locationSearchBox.nativeElement, 'keyup').pipe(
             debounceTime(2000) // 2 seconds
         ).subscribe((ev: HTMLInputElement) => {
-            //@ts-ignore
-            this.getCities(ev.target.value)
+            if (!this.selectedCity) {
+                //@ts-ignore
+                this.getCities(ev.target.value)
+            }
+            //resolve an issue where the selection of a city fired the debounce.
+            this.selectedCity = false;
         });
+        const input = document.querySelector('#locationSearchInput')
+        //@ts-ignore
+        input.onchange = (e) => {
+            this.selectedCity = true;
+            var opts = document.getElementById('city-list').childNodes;
+            for (var i = 0; i < opts.length; i++) {
+                //@ts-ignore
+                if (opts[i].value === e.target.value) {
+                    //@ts-ignore
+                    this.getWeatherForecast(null, null, opts[i].innerText);
+                    break;
+                }
+            }
+        }
     }
   constructor(http: HttpClient, @Inject('BASE_URL') baseUrl: string) {
       this.httpClient = http;
       this.baseUrl = baseUrl;
       this.loading = false;
+      this.selectedCity = false;
+      this.useMetric = false;
     }
-    getWeatherForecast(latitude: number = null, longitude: number = null, location: string = null) {
+    getWeatherForecast(latitude: number = null, longitude: number = null, cityKey: string = null) {
         if (latitude && !longitude || !latitude && longitude) {
             throw new Error("Please provide both a latitute and longitude.")
         }
@@ -39,12 +62,12 @@ export class WeatherDataComponent {
         }
 
         if (location) {
-            queryParams = queryParams.append("location", location);
+            queryParams = queryParams.append("cityKey", cityKey);
         }
-
+        queryParams = queryParams.append("useMetric", this.useMetric.toString());
         this.loading = true;
-        this.httpClient.get<WeatherForecast[]>(this.baseUrl + 'WeatherForecast/GetWeatherInfo', { params: queryParams }).subscribe(result => {
-            this.forecasts = result;
+        this.httpClient.get<WeatherForecast>(this.baseUrl + 'WeatherForecast/GetWeatherInfo', { params: queryParams }).subscribe(result => {
+            this.forecast = result;
             this.loading = false;
         }, error => console.error(error));
     }
@@ -55,6 +78,9 @@ export class WeatherDataComponent {
         this.httpClient.get<CityCondensed[]>(this.baseUrl + 'City/GetCities', { params: { location } }).subscribe(result => {
             this.citiesList = result;
         }, error => console.error(error));
+    }
+    changeMetric(newValue: boolean) {
+        this.useMetric = newValue;
     }
 }
 interface WeatherForecast {

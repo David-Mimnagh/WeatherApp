@@ -1,22 +1,38 @@
-<h1 id="tableLabel">Weather forecast</h1>
 
-<p>Enter a location to find the latest weather information</p>
-<form>
-
-    <div class="form-group">
-        <label for="locationSearchInput">City:</label>
-        <input #test list="id-car" type="text" class="form-control-sm" style="margin: 0 20px" id="locationSearchInput" placeholder="Glasgow" value="">
-        <datalist id="id-car" class="form-control-sm">
-            <option *ngFor="let city of citiesList" [value]="city.key">{{city.name}}</option>
-        </datalist>
-        <button value="Use current location" class="btn btn-primary" style="padding: 1px 3px" (click)="getCurrentLocation()">
-            Use current location
-        </button>
+<div class="page-intro-container">
+    <h1 id="page-title" class="page-title">Weather forecast</h1>
+    <div class="slider-container">
+        <p>Use Metric System</p>
+        <label class="switch" for="checkbox">
+            <input type="checkbox" id="checkbox" [(ngModel)]="isChecked" (change)="changeMetric(isChecked)"/>
+            <div class="slider round"></div>
+        </label>
     </div>
-</form>
-<p *ngIf="loading"><em>Loading...</em></p>
+    <p class="page-description">Enter a location to find the latest weather information</p>
+    <form class="main-form-container">
+        <div class="form-group">
+            <input #cityInput list="city-list" autocomplete="off" type="text" class="form-control-sm city-input" id="locationSearchInput" placeholder="Glasgow" value="" onkeypress="return event.keyCode != 13;">
+            <datalist id="city-list" role="listbox">
+                <option *ngFor="let city of citiesList" [value]="city.name">{{city.key}}</option>
+            </datalist>
+            <button class="btn btn-primary geo-location-btn" (click)="getCurrentLocation()" title="Use current location.">
+                <i class="fa-solid fa-location-dot"></i>
+            </button>
+        </div>
+    </form>
+</div>
 
-<table class='table table-striped' aria-labelledby="tableLabel" *ngIf="forecasts">
+<div *ngIf="loading">
+    <div class="lds-ellipsis">
+        <p>Loading</p>
+        <div></div>
+        <div></div>
+        <div></div>
+        <div></div>
+    </div>
+</div>
+
+<table class='table table-striped' aria-labelledby="tableLabel" *ngIf="forecast">
   <thead>
     <tr>
       <th>Date</th>
