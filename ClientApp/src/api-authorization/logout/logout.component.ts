@@ -15,14 +15,14 @@ import { LogoutActions, ApplicationPaths, ReturnUrlType } from '../api-authoriza
 })
 export class LogoutComponent implements OnInit {
   public message = new BehaviorSubject<string>(null);
-
+  public loggingOut = true;
   constructor(
     private authorizeService: AuthorizeService,
     private activatedRoute: ActivatedRoute,
     private router: Router) { }
 
   async ngOnInit() {
-    const action = this.activatedRoute.snapshot.url[1];
+      const action = this.activatedRoute.snapshot.url[1];
     switch (action.path) {
       case LogoutActions.Logout:
         if (!!window.history.state.local) {
@@ -45,25 +45,26 @@ export class LogoutComponent implements OnInit {
   }
 
   private async logout(returnUrl: string): Promise<void> {
-    const state: INavigationState = { returnUrl };
+      const state: INavigationState = { returnUrl };
     const isauthenticated = await this.authorizeService.isAuthenticated().pipe(
       take(1)
     ).toPromise();
-    if (isauthenticated) {
-      const result = await this.authorizeService.signOut(state);
-      switch (result.status) {
-        case AuthenticationResultStatus.Redirect:
-          break;
-        case AuthenticationResultStatus.Success:
-          await this.navigateToReturnUrl(returnUrl);
-          break;
-        case AuthenticationResultStatus.Fail:
-          this.message.next(result.message);
-          break;
-        default:
-          throw new Error('Invalid authentication result status.');
-      }
-    } else {
+      if (isauthenticated) {
+          const result = await this.authorizeService.signOut(state);
+          switch (result.status) {
+            case AuthenticationResultStatus.Redirect:
+              break;
+            case AuthenticationResultStatus.Success:
+              await this.navigateToReturnUrl(returnUrl);
+              break;
+            case AuthenticationResultStatus.Fail:
+              this.message.next(result.message);
+              break;
+            default:
+              throw new Error('Invalid authentication result status.');
+          }
+      } else {
+          this.loggingOut = false;
       this.message.next('You successfully logged out!');
     }
   }

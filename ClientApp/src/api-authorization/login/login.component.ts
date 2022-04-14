@@ -14,7 +14,8 @@ import { LoginActions, QueryParameterNames, ApplicationPaths, ReturnUrlType } fr
   styleUrls: ['./login.component.css']
 })
 export class LoginComponent implements OnInit {
-  public message = new BehaviorSubject<string>(null);
+    public message = new BehaviorSubject<string>(null);
+    public loggingIn = true;
 
   constructor(
     private authorizeService: AuthorizeService,
@@ -64,6 +65,7 @@ export class LoginComponent implements OnInit {
       default:
         throw new Error(`Invalid status result ${(result as any).status}.`);
     }
+      this.loggingIn = false;
   }
 
   private async processLoginCallback(): Promise<void> {

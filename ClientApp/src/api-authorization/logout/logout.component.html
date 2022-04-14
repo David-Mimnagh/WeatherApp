@@ -1,1 +1,8 @@
-<p>{{ message | async }}</p>
+<div *ngIf="loggingOut" class="lds-ellipsis">
+    <p>Loading</p>
+    <div></div>
+    <div></div>
+    <div></div>
+    <div></div>
+</div>
+<p *ngIf="!loggingOut">{{ message | async }}</p>
