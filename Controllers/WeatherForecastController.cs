@@ -35,7 +35,7 @@ namespace WeatherApp.Controllers
 
         [HttpGet]
         [Route("GetWeatherInfo")]
-        public async Task<IEnumerable<WeatherForecast>> GetWeatherInfo([FromQuery] string latitude = null, [FromQuery] string longitude = null, [FromQuery] string cityKey = null, [FromQuery]  bool useMetric = false)
+        public async Task<WeatherForecast> GetWeatherInfo([FromQuery] string latitude = null, [FromQuery] string longitude = null, [FromQuery] string cityKey = null, [FromQuery]  bool useMetric = false)
         {
             _logger.Log(LogLevel.Information, "Getting Weather Info for city key: ", cityKey);
             if ((String.IsNullOrEmpty(latitude) || String.IsNullOrEmpty(longitude)))
@@ -50,6 +50,33 @@ namespace WeatherApp.Controllers
                     throw new System.Web.Http.HttpResponseException(resp);
                 }
             }
+            var locationName = cityKey == null ? "" : cityKey;
+            if(!String.IsNullOrEmpty(latitude) && !String.IsNullOrEmpty(longitude) && (String.IsNullOrEmpty(cityKey) || cityKey == "null"))
+            {
+                var geoLocationBuilder = new UriBuilder(_settings.GeoLocAPIUrl);
+                var geoLocQuery = HttpUtility.ParseQueryString(geoLocationBuilder.Query);
+                geoLocQuery["apikey"] = _settings.APIKey;
+                geoLocQuery["q"] = $"{latitude},{longitude}";
+                geoLocationBuilder.Query = geoLocQuery.ToString();
+                HttpResponseMessage geoLocResponse = await client.GetAsync(geoLocationBuilder.Uri);
+                if (!geoLocResponse.IsSuccessStatusCode)
+                {
+                    string responseErrorMessage = await geoLocResponse.Content.ReadAsStringAsync();
+                    var resp = new HttpResponseMessage(System.Net.HttpStatusCode.InternalServerError)
+                    {
+                        Content = new StringContent("Error, Bad response from Acuweather API when getting geolocation data"),
+                        ReasonPhrase = responseErrorMessage
+                    };
+                    _logger.Log(LogLevel.Warning, "Error, Bad response from Acuweather API when getting geolocation data");
+                    throw new System.Web.Http.HttpResponseException(resp);
+
+                }
+                string geoLocationResponseContent = await geoLocResponse.Content.ReadAsStringAsync();
+                GeoLocation geoLocationInfo = JsonConvert.DeserializeObject<GeoLocation>(geoLocationResponseContent);
+                cityKey = geoLocationInfo.Key;
+                locationName = $"{geoLocationInfo.LocalizedName} - {geoLocationInfo.Country.LocalizedName}";
+            }
+
             var dailyForecastBuilder = new UriBuilder($"{_settings.ForecastAPIUrl}{cityKey}");
             var query = HttpUtility.ParseQueryString(dailyForecastBuilder.Query);
             query["apikey"] =  _settings.APIKey;
@@ -59,20 +86,32 @@ namespace WeatherApp.Controllers
             }
             dailyForecastBuilder.Query = query.ToString();
             HttpResponseMessage response = await client.GetAsync(dailyForecastBuilder.Uri);
-            if (response.IsSuccessStatusCode)
+            if (!response.IsSuccessStatusCode)
             {
-                string oneDayForecastResponse = await response.Content.ReadAsStringAsync();
-                Forecast oneDayForecast = JsonConvert.DeserializeObject<Forecast>(oneDayForecastResponse);
-
+                string responseErrorMessage = await response.Content.ReadAsStringAsync();
+                var resp = new HttpResponseMessage(System.Net.HttpStatusCode.InternalServerError)
+                {
+                    Content = new StringContent("Error, Bad response from Acuweather API"),
+                    ReasonPhrase = responseErrorMessage
+                };
+                _logger.Log(LogLevel.Warning, "Error, Bad response from Acuweather API");
+                throw new System.Web.Http.HttpResponseException(resp);
+                
             }
-            var rng = new Random();
-            return Enumerable.Range(1, 5).Select(index => new WeatherForecast
+
+            string oneDayForecastResponse = await response.Content.ReadAsStringAsync();
+            Forecast oneDayForecast = JsonConvert.DeserializeObject<Forecast>(oneDayForecastResponse);
+            DailyForecast dailyForecast = oneDayForecast.DailyForecasts.First(); // currently only support 1 day forecast due to api key limitations
+            return new WeatherForecast()
             {
-                Date = DateTime.Now.AddDays(index),
-                TemperatureC = rng.Next(-20, 55),
-                Summary = Summaries[rng.Next(Summaries.Length)]
-            })
-            .ToArray();
+                Date = dailyForecast.Date.ToShortDateString(),
+                LocationName = locationName,
+                summaryText = oneDayForecast.Headline.Text,
+                forecastLink = oneDayForecast.Headline.Link,
+                temperatureMin = $"{dailyForecast.Temperature.Minimum.Value}{dailyForecast.Temperature.Minimum.Unit}",
+                temperatureMax = $"{dailyForecast.Temperature.Maximum.Value}{dailyForecast.Temperature.Maximum.Unit}",
+                percipitation = dailyForecast.Day.HasPrecipitation ? $"{dailyForecast.Day.PrecipitationIntensity} {dailyForecast.Day.PrecipitationType}" : "No Percipitation"
+            };
         }
     }
 }

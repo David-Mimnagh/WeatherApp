@@ -80,3 +80,20 @@ input:checked + .slider {
     .slider.round:before {
         border-radius: 50%;
     }
+.forecast-breakdown {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+}
+
+.forecast-breakdown-title {
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+.forecast-breakdown-summary {
+    font-weight: 300;
+    font-style: italic;
+    text-align: center;
+}
+.forecast-breakdown-text {
+}
