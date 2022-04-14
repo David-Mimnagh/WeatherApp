@@ -4,12 +4,12 @@ namespace WeatherApp
 {
     public class WeatherForecast
     {
-        public DateTime Date { get; set; }
-
-        public int TemperatureC { get; set; }
-
-        public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-
-        public string Summary { get; set; }
+        public string Date { get; set; }
+        public string LocationName { get; set; }
+        public string temperatureMin { get; set; }
+        public string temperatureMax { get; set; }
+        public string summaryText { get; set; }
+        public string percipitation { get; set; }
+        public string forecastLink { get; set; }
     }
 }

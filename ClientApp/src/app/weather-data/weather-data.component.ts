@@ -11,6 +11,7 @@ import { debounceTime } from 'rxjs/operators';
 export class WeatherDataComponent {
     public forecast: WeatherForecast;
     public citiesList: CityCondensed[];
+    public selectedCityName: string;
     httpClient: HttpClient;
     baseUrl: string;
     loading: boolean;
@@ -36,6 +37,7 @@ export class WeatherDataComponent {
             for (var i = 0; i < opts.length; i++) {
                 //@ts-ignore
                 if (opts[i].value === e.target.value) {
+                    this.selectedCityName = e.target.value;
                     //@ts-ignore
                     this.getWeatherForecast(null, null, opts[i].innerText);
                     break;
@@ -68,6 +70,7 @@ export class WeatherDataComponent {
         this.loading = true;
         this.httpClient.get<WeatherForecast>(this.baseUrl + 'WeatherForecast/GetWeatherInfo', { params: queryParams }).subscribe(result => {
             this.forecast = result;
+            this.selectedCityName = this.forecast.locationName === cityKey ? this.selectedCityName : this.forecast.locationName;
             this.loading = false;
         }, error => console.error(error));
     }
@@ -85,11 +88,16 @@ export class WeatherDataComponent {
 }
 interface WeatherForecast {
     date: string;
-    temperatureC: number;
-    temperatureF: number;
-    summary: string;
+    locationName: string;
+    temperatureMin: number;
+    temperatureMax: number;
+    summaryText: string;
+    rainProbability: number;
+    sunRiseTime: string;
+    sunSetTime: string;
+    forecastLink: string;
 }
 interface CityCondensed {
-    Key: string;
-    Name: number;
+    key: string;
+    name: number;
 }
