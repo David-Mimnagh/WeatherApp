@@ -120,7 +120,7 @@ namespace WeatherApp.Controllers
                 forecastLink = oneDayForecast.Headline.Link,
                 temperatureMin = $"{dailyForecast.Temperature.Minimum.Value}{dailyForecast.Temperature.Minimum.Unit}",
                 temperatureMax = $"{dailyForecast.Temperature.Maximum.Value}{dailyForecast.Temperature.Maximum.Unit}",
-                percipitation = dailyForecast.Day.HasPrecipitation ? $"{dailyForecast.Day.PrecipitationIntensity} {dailyForecast.Day.PrecipitationType}" : "No Percipitation"
+                percipitation = dailyForecast.Day.HasPrecipitation ? $"{dailyForecast.Day.PrecipitationIntensity} {dailyForecast.Day.PrecipitationType}" : "No Precipitation"
             };
         }
     }
