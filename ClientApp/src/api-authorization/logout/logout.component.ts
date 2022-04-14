@@ -63,6 +63,7 @@ export class LogoutComponent implements OnInit {
             default:
               throw new Error('Invalid authentication result status.');
           }
+          this.loggingOut = false;
       } else {
           this.loggingOut = false;
       this.message.next('You successfully logged out!');

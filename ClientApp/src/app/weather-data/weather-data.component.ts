@@ -75,11 +75,12 @@ export class WeatherDataComponent {
         }, error => console.error(error));
     }
     getCurrentLocation() {
-        navigator.geolocation.getCurrentPosition((geoLoc) => this.getWeatherForecast(geoLoc.coords.latitude, geoLoc.coords.longitude)) 
+        navigator.geolocation.getCurrentPosition((geoLoc) => this.getWeatherForecast(geoLoc.coords.latitude, geoLoc.coords.longitude))
     }
     getCities(location: string = null) {
         this.httpClient.get<CityCondensed[]>(this.baseUrl + 'City/GetCities', { params: { location } }).subscribe(result => {
             this.citiesList = result;
+            this.loading = false;
         }, error => console.error(error));
     }
 }
