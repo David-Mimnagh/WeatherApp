@@ -82,9 +82,6 @@ export class WeatherDataComponent {
             this.citiesList = result;
         }, error => console.error(error));
     }
-    changeMetric(newValue: boolean) {
-        this.useMetric = newValue;
-    }
 }
 interface WeatherForecast {
     date: string;
